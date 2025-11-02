@@ -466,7 +466,8 @@ namespace ninaAPI.WebService.V2
             [QueryField] bool stream,
             [QueryField] bool omitImage,
             [QueryField] bool waitForResult,
-            [QueryField] bool save)
+            [QueryField] bool save,
+            [QueryField] string targetName)
         {
 
             HttpResponse response = new HttpResponse();
@@ -583,7 +584,8 @@ namespace ninaAPI.WebService.V2
                         }
 
                         PrepareImageParameters parameters = new PrepareImageParameters(autoStretch: true);
-                        IExposureData exposure = await AdvancedAPI.Controls.Imaging.CaptureImage(sequence, CameraCaptureToken.Token, AdvancedAPI.Controls.StatusMediator.GetStatus());
+                        string imagingTargetName = string.IsNullOrWhiteSpace(targetName) ? "Snapshot" : targetName;
+                        IExposureData exposure = await AdvancedAPI.Controls.Imaging.CaptureImage(sequence, CameraCaptureToken.Token, AdvancedAPI.Controls.StatusMediator.GetStatus(), imagingTargetName);
                         IRenderedImage renderedImage = await AdvancedAPI.Controls.Imaging.PrepareImage(exposure, parameters, CameraCaptureToken.Token);
 
                         var encoder = BitmapHelper.GetEncoder(renderedImage.Image, -1);
@@ -626,7 +628,7 @@ namespace ninaAPI.WebService.V2
                     if (waitForResult)
                     {
                         await CaptureTask;
-                        await CameraCapture(false, 0, true, resize, quality, size, 0, scale, stream, omitImage, false, false);
+                        await CameraCapture(false, 0, true, resize, quality, size, 0, scale, stream, omitImage, false, false, targetName);
                         return;
                     }
                     response.Response = "Capture started";
