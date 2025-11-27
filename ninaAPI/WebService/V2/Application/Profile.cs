@@ -207,8 +207,8 @@ namespace ninaAPI.WebService.V2
                 }
                 else
                 {
-
-                    string[] pathSplit = settingpath.Split('-'); // e.g. 'CameraSettings-PixelSize' -> CameraSettings, PixelSize
+                    // e.g. 'CameraSettings-PixelSize' or 'FilterWheelSettings-FilterWheelFilters-1-AutoFocusGain'
+                    string[] pathSplit = settingpath.Split('-');
                     object position = AdvancedAPI.Controls.Profile.ActiveProfile;
 
                     if (pathSplit.Length == 1)
@@ -219,9 +219,29 @@ namespace ninaAPI.WebService.V2
                     {
                         for (int i = 0; i <= pathSplit.Length - 2; i++)
                         {
-                            position = position.GetType().GetProperty(pathSplit[i]).GetValue(position);
+                            string segment = pathSplit[i];
+
+                            // Check if this segment is a numeric index for a list
+                            if (int.TryParse(segment, out int index))
+                            {
+                                position = ((System.Collections.IList)position)[index];
+                            }
+                            else
+                            {
+                                position = position.GetType().GetProperty(segment).GetValue(position);
+                            }
                         }
-                        PropertyInfo prop = position.GetType().GetProperty(pathSplit[^1]);
+
+                        string lastSegment = pathSplit[^1];
+                        // Check if last segment is a numeric index
+                        if (int.TryParse(lastSegment, out int lastIndex))
+                        {
+                            // Get the item from the list and we need to find the property before it
+                            // This shouldn't happen as the property should be the last non-numeric segment
+                            throw new InvalidOperationException("Setting path cannot end with an array index");
+                        }
+
+                        PropertyInfo prop = position.GetType().GetProperty(lastSegment);
                         prop.SetValue(position, ((string)newValue).CastString(prop.PropertyType));
                     }
 
