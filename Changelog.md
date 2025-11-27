@@ -1,6 +1,33 @@
 # Changelog
 
-The changes for each individual (beta) release can be seen [here](https://github.com/christian-photo/ninaAPI/releases). However this Changelog will be mostly complete.
+The changes for each individual (beta) release can be seen in each [release](https://github.com/christian-photo/ninaAPI/releases). This changelog will only cover the fully released versions.
+
+## 2.2.12.0
+
+- Minimum application version was increased to NINA 3.2!
+- Added the field `TrackingMode` to the `mount/info` endpoint
+- Fixes an issue where the `image-history` endpoint would return the first, now the last image when all parameters were omitted
+- Added `AUTOFOCUS-STARTING` and `AUTOFOCUS-POINT-ADDED` events to the websocket
+- Added `plugin/settings` to get the plugin settings
+- New `livestack/status` endpoint and `STACK-STATUS` event in the websocket (thanks @rbarbera)
+
+## 2.2.11.1
+
+- Fixed a bug where NINA would crash if another plugin also subscribed to the Meridian Flip events
+
+## 2.2.11.0
+
+- Added a networked manual rotator (just like the already existing networked filter wheel)
+- Added the url parameter `onlyAwaitCaptureCompletion` and `onlySaveRaw` to the `camera/capture` endpoint for faster capture. This can be used to only await the capture completion and not the image preparation. The other capture endpoints will not work when using `onlySaveRaw`.
+- Added the url parameter `targetName` to the `camera/capture` endpoint to specify the name of the target that is being captured.
+- Added `HFRStDev`, `Min`, `Max` and `TargetName` to the `IMAGE-SAVE` event (and `image-history`)
+- Extended the STACK-UPDATED event with the following fields:
+  - `IsMonochrome`
+  - `StackCount` (If IsMonochrome is true)
+  - `RedStackCount` (If IsMonochrome is false)
+  - `GreenStackCount` (If IsMonochrome is false)
+  - `BlueStackCount` (If IsMonochrome is false)
+- Added `livestack/image/{target}/{filter}/info` to get information about the current stacked image
 
 ## 2.2.10.0
 

@@ -2,7 +2,7 @@ openapi: 3.0.0
 info:
   title: Advanced API
   description: This is the API documentation for the NINA plugin Advanced API. Please use streaming instead of the default base64 encoding for images, as base64 support will be removed in the near future!
-  version: 2.2.9
+  version: 2.2.11
 servers:
   - url: http://localhost:1888/v2/api
     description: V2 api server
@@ -23,7 +23,7 @@ paths:
                 properties:
                   Response:
                     type: string
-                    example: 2.2.9.0
+                    example: 2.2.11.0
                   Error:
                     type: string
                     example: ""
@@ -106,6 +106,33 @@ paths:
                   Type:
                     type: string
                     example: "API"
+
+  /plugin/settings:
+    get:
+      tags:
+        - Plugin
+      summary: Plugin settings
+      description: This endpoint returns the plugin settings.
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  AccessControlHeaderEnabled:
+                    type: boolean
+                    example: true
+                  ShouldCreateThumbnails:
+                    type: boolean
+                    example: true
+        "500":
+          description: Internal server error, Unknown error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UnknownError"
 
   /equipment/camera/info:
     get:
@@ -747,8 +774,26 @@ paths:
           schema:
             type: boolean
         - in: query
+          name: targetName
+          description: The name of the target that is being captured. Useful for livestacking as an example.
+          required: false
+          schema:
+            type: string
+        - in: query
           name: save
           description: Save the image to the disk. This needs to be set, when capturing the image.
+          required: false
+          schema:
+            type: boolean
+        - in: query
+          name: onlyAwaitCaptureCompletion
+          description: Use this if you want to capture images at a high rate, the endpoint will return immediately once the camera is ready to take a picture again. The image preparation, platesolve and save will continue to run in the background, so the image wont be available until these have completed as well.
+          required: false
+          schema:
+            type: boolean
+        - in: query
+          name: onlySaveRaw
+          description: Use if you do not need the other capture endpoints, but want to save the raw image. Useful for high frequency captures.
           required: false
           schema:
             type: boolean
@@ -5400,6 +5445,14 @@ paths:
                               type: number
                             IsBayered:
                               type: boolean
+                            Min:
+                              type: number
+                            Max:
+                              type: number
+                            HFRStDev:
+                              type: number
+                            TargetName:
+                              type: string
                       - type: integer
                         description: The number of images
                         example: 1
@@ -6397,6 +6450,44 @@ paths:
               schema:
                 $ref: "#/components/schemas/UnknownError"
 
+  /livestack/status:
+    get:
+      tags:
+        - Livestack
+      summary: Request Livestack status
+      description: Requests the current status of the Livestack, requires Livestack >= v1.0.1.7. Note that this method cannot fail, even if the livestack plugin is not installed or something went wrong. Livestack status is tracked by the server and we can get always the last status reported by nina.plugin.livestack.
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  Response:
+                    type: string
+                    enum:
+                      - running
+                      - stopped
+                  Error:
+                    type: string
+                    example: ""
+                  StatusCode:
+                    type: integer
+                    example: 200
+                  Success:
+                    type: boolean
+                    example: true
+                  Type:
+                    type: string
+                    example: "API"
+        "500":
+          description: Internal server error, Unknown error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UnknownError"
+
   /livestack/start:
     get:
       tags:
@@ -6597,6 +6688,80 @@ paths:
                 description: Image in jpg format, when stream is set to true and the image quality is specified
                 type: array
                 format: binary
+        "500":
+          description: Internal server error, Unknown error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UnknownError"
+
+  /livestack/image/{target}/{filter}/info:
+    get:
+      tags:
+        - Livestack
+      summary: Get Stacked Image Info
+      description: Gets information about the stacked image, like filter, target and stack count.
+      parameters:
+        - in: path
+          name: target
+          required: true
+          schema:
+            type: string
+            example: M31
+        - in: path
+          name: filter
+          required: true
+          schema:
+            type: string
+            example: RGB
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  Response:
+                    type: object
+                    properties:
+                      IsMonochrome:
+                        type: boolean
+                        example: true
+                      StackCount:
+                        type: integer
+                        description: Only present if IsMonochrome is true
+                        example: 10
+                      RedStackCount:
+                        type: integer
+                        description: Only present if IsMonochrome is false
+                        example: 10
+                      GreenStackCount:
+                        type: integer
+                        description: Only present if IsMonochrome is false
+                        example: 10
+                      BlueStackCount:
+                        type: integer
+                        description: Only present if IsMonochrome is false
+                        example: 10
+                      Filter:
+                        type: string
+                        example: RGB
+                      Target:
+                        type: string
+                        example: M31
+                  Error:
+                    type: string
+                    example: ""
+                  StatusCode:
+                    type: integer
+                    example: 200
+                  Success:
+                    type: boolean
+                    example: true
+                  Type:
+                    type: string
+                    example: "API"
         "500":
           description: Internal server error, Unknown error
           content:
@@ -8306,6 +8471,15 @@ components:
         Response:
           type: object
           properties:
+            TrackingMode:
+              type: string
+              enum:
+                - Siderial
+                - Lunar
+                - Solar
+                - King
+                - Custom
+                - Stopped
             SiderealTime:
               type: number
             RightAscension:
